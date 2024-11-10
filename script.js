@@ -52,9 +52,15 @@ function createAsciiContent(data) {
                 value.forEach((item, idx) => {
                     content += `SELECT '{' FROM DUMMY ASCII ADDTO :infile;\n`;
                     content += createAsciiContent(item);
-                    content += `SELECT '}' FROM DUMMY ASCII ADDTO :infile${idx < value.length - 1 ? ',' : ''};\n`;
+                    const isLastArrayItem = idx === value.length - 1;
+                    content += `SELECT '},' FROM DUMMY ASCII ADDTO :infile;\n`;
+                    
+                    // הוספת פסיק וסוגריים נפרדים לשורות נפרדות
+                    if (!isLastArrayItem) {
+                        content += `SELECT '{' FROM DUMMY ASCII ADDTO :infile;\n`;
+                    }
                 });
-                content += `SELECT '],' FROM DUMMY ASCII ADDTO :infile;\n`;
+                content += `SELECT ']' FROM DUMMY ASCII ADDTO :infile;\n`;
             } else {
                 content += createLine(upperKey, value, !isLastItem);
             }
@@ -63,7 +69,6 @@ function createAsciiContent(data) {
     return content;
 }
 
-// פונקציה ליצירת שורה עבור ערך יחיד
 function createLine(key, value, hasComma) {
     return `SELECT STRCAT('"${key}":"', :${key}, '"${hasComma ? ',' : ''}') FROM DUMMY ASCII ADDTO :infile;\n`;
 }
