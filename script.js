@@ -54,7 +54,7 @@ function createAsciiContent(data) {
                     content += createAsciiContent(item);
                     content += `SELECT '}' FROM DUMMY ASCII ADDTO :infile${idx < value.length - 1 ? ',' : ''};\n`;
                 });
-                content += `SELECT ']' FROM DUMMY ASCII ADDTO :infile${isLastItem ? '' : ','};\n`;
+                content += `SELECT '],' FROM DUMMY ASCII ADDTO :infile;\n`;
             } else {
                 content += createLine(upperKey, value, !isLastItem);
             }
