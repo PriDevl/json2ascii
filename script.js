@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // פונקציה ליצירת תוכן ה-ASCII
 function generateAsciiFromJson(data) {
-    let asciiContent = "/* :INFILE = 'C:\\tmp\\infile.txt'; */\n";
+    let asciiContent = "/* :infile = 'C:/tmp/infile.txt'; */\n";
     asciiContent += `SELECT '{' FROM DUMMY ASCII :infile;\n`;
     asciiContent += createAsciiContent(data);
     asciiContent += `SELECT '}' FROM DUMMY ASCII ADDTO :infile;\n`;
@@ -46,7 +46,7 @@ function createAsciiContent(data) {
             if (typeof value === 'object' && !Array.isArray(value)) {
                 content += `SELECT '"${upperKey}": {' FROM DUMMY ASCII ADDTO :infile;\n`;
                 content += createAsciiContent(value);
-                content += `SELECT '}' FROM DUMMY ASCII ADDTO :infile${isLastItem ? '' : ','};\n`;
+                content += `SELECT '},' FROM DUMMY ASCII ADDTO :infile${isLastItem ? '' : ','};\n`;
             } else if (Array.isArray(value)) {
                 content += `SELECT '"${upperKey}": [' FROM DUMMY ASCII ADDTO :infile;\n`;
                 value.forEach((item, idx) => {
