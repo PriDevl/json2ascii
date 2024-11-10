@@ -32,7 +32,7 @@ async function generateAsciiFromJson(data) {
 }
 
 function createAsciiContent(data, isFirst = true) {
-    let content = isFirst ? `SELECT '{' FROM DUMMY TABS ASCII UNICODE :INFILE;\n` : `SELECT '{' FROM DUMMY TABS ADDTO ASCII UNICODE :INFILE;\n`;
+    let content = isFirst ? `SELECT '{' FROM DUMMY ASCII UNICODE :INFILE;\n` : `SELECT '{' FROM DUMMY ADDTO ASCII UNICODE :INFILE;\n`;
 
     if (typeof data === 'object' && !Array.isArray(data)) {
         const keys = Object.keys(data);
@@ -42,26 +42,26 @@ function createAsciiContent(data, isFirst = true) {
             const isLast = index === keys.length - 1;
 
             if (typeof value === 'object' && !Array.isArray(value)) {
-                content += `SELECT '"${upperKey}":' FROM DUMMY TABS ADDTO ASCII UNICODE :INFILE;\n`;
+                content += `SELECT '"${upperKey}":' FROM DUMMY ADDTO ASCII UNICODE :INFILE;\n`;
                 content += createAsciiContent(value, false);
             } else if (Array.isArray(value)) {
-                content += `SELECT '"${upperKey}":' FROM DUMMY TABS ADDTO ASCII UNICODE :INFILE;\n`;
+                content += `SELECT '"${upperKey}":' FROM DUMMY ADDTO ASCII UNICODE :INFILE;\n`;
                 value.forEach((item) => {
-                    content += `SELECT '{' FROM DUMMY TABS ADDTO ASCII UNICODE :INFILE;\n`;
+                    content += `SELECT '{' FROM DUMMY ADDTO ASCII UNICODE :INFILE;\n`;
                     content += createAsciiContent(item, false);
-                    content += `SELECT '}' FROM DUMMY TABS ADDTO ASCII UNICODE :INFILE;\n`;
+                    content += `SELECT '}' FROM DUMMY ADDTO ASCII UNICODE :INFILE;\n`;
                 });
             } else {
                 content += createLine(upperKey, value, !isLast);
             }
         });
-        content += `SELECT '}' FROM DUMMY TABS ADDTO ASCII UNICODE :INFILE;\n`;
+        content += `SELECT '}' FROM DUMMY ADDTO ASCII UNICODE :INFILE;\n`;
     }
     return content;
 }
 
 function createLine(key, value, hasComma) {
-    return `SELECT '"${key}": "':${key}"'${hasComma ? "',' " : " "}FROM DUMMY TABS ADDTO ASCII UNICODE :INFILE;\n`;
+    return `SELECT '"${key}": "':${key}"'${hasComma ? "',' " : " "}FROM DUMMY ADDTO ASCII UNICODE :INFILE;\n`;
 }
 
 function downloadAsciiFile(content) {
