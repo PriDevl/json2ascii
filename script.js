@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     downloadButton.addEventListener('click', async () => {
         const jsonData = jsonInput.value.trim();
         if (!jsonData) {
-            showAlert('Please paste your JSON data first.');
+            alert('Please paste your JSON data first.');
             return;
         }
 
@@ -19,57 +19,55 @@ document.addEventListener('DOMContentLoaded', () => {
             const asciiContent = await generateAscii(parsedData);
             downloadAsciiFile(asciiContent);
         } catch (error) {
-            showAlert(`Invalid JSON format: ${error.message}`);
+            alert(`Invalid JSON format: ${error.message}`);
         }
     });
 });
 
-// פונקציה ליצירת תוכן ה-ASCII עם משתנים לפי הפרמטרים
+// פונקציה גנרית ליצירת תוכן ה-ASCII
 async function generateAscii(data) {
     let asciiContent = "/* :INFILE = 'C:\\tmp\\INFILE.txt'; */\n";
-    asciiContent += `SELECT '{' FROM DUMMY ASCII UNICODE :infile;\n`;
-    asciiContent += parseJsonToAscii(data);
-    asciiContent += `SELECT '}' FROM DUMMY ASCII UNICODE :infile;\n`;
+    asciiContent += `SELECT '{' FROM DUMMY ASCII :infile;\n`;
+    asciiContent += createAsciiContent(data);
+    asciiContent += `SELECT '}' FROM DUMMY ASCII ADDTO :infile;\n`;
     return asciiContent.replace(/;\s*/g, ';\n').trim();
 }
 
-function parseJsonToAscii(data, isFirst = false) {
+function createAsciiContent(data) {
     let content = '';
 
     if (typeof data === 'object' && !Array.isArray(data)) {
         const keys = Object.keys(data);
-
         keys.forEach((key, index) => {
             const upperKey = key.toUpperCase();
             const value = data[key];
-            const isLast = index === keys.length - 1;
 
             if (typeof value === 'object' && !Array.isArray(value)) {
-                content += `SELECT '"${upperKey}":' FROM DUMMY ASCII UNICODE :infile;\n`;
-                content += `SELECT '{' FROM DUMMY ASCII UNICODE :infile;\n`;
-                content += parseJsonToAscii(value);
-                content += `SELECT '}' FROM DUMMY ASCII UNICODE :infile;\n`;
+                content += `SELECT '"${upperKey}": {' FROM DUMMY ASCII ADDTO :infile;\n`;
+                content += createAsciiContent(value);
+                content += `SELECT '}' FROM DUMMY ASCII ADDTO :infile;\n`;
             } else if (Array.isArray(value)) {
-                content += `SELECT '"${upperKey}":' FROM DUMMY ASCII UNICODE :infile;\n`;
-                content += `SELECT '[' FROM DUMMY ASCII UNICODE :infile;\n`;
+                content += `SELECT '"${upperKey}": [' FROM DUMMY ASCII ADDTO :infile;\n`;
                 value.forEach(item => {
-                    content += `SELECT '{' FROM DUMMY ASCII UNICODE :infile;\n`;
-                    content += parseJsonToAscii(item);
-                    content += `SELECT '}' FROM DUMMY ASCII UNICODE :infile;\n`;
+                    content += `SELECT '{' FROM DUMMY ASCII ADDTO :infile;\n`;
+                    content += createAsciiContent(item);
+                    content += `SELECT '}' FROM DUMMY ASCII ADDTO :infile;\n`;
                 });
-                content += `SELECT ']' FROM DUMMY ASCII UNICODE :infile;\n`;
+                content += `SELECT ']' FROM DUMMY ASCII ADDTO :infile;\n`;
             } else {
-                content += createAsciiLine(upperKey, key, !isLast);
+                content += createLine(upperKey, key, index < keys.length - 1);
             }
         });
     }
     return content;
 }
 
-function createAsciiLine(key, variableName, hasComma = true) {
-    return `SELECT '"${key}":"', :${variableName}, '${hasComma ? ",' " : " "}'FROM DUMMY ASCII UNICODE :infile;\n`;
+// פונקציה ליצירת שורות
+function createLine(key, jsonKey, hasComma) {
+    return `SELECT STRCAT('"${key}":"', :${jsonKey}, '"${hasComma ? ',' : ''}"') FROM DUMMY ASCII ADDTO :infile;\n`;
 }
 
+// פונקציה להורדת הקובץ
 function downloadAsciiFile(content) {
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -78,8 +76,4 @@ function downloadAsciiFile(content) {
     a.download = 'asciifile.txt';
     a.click();
     URL.revokeObjectURL(url);
-}
-
-function showAlert(message) {
-    alert(message);
 }
