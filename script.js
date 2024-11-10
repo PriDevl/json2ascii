@@ -24,7 +24,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// פונקציה ליצירת תוכן ה-ASCII בצורה גנרית
 async function generateAscii(data) {
     let asciiContent = "/* :INFILE = 'C:\\tmp\\INFILE.txt'; */\n";
     asciiContent += `SELECT '{' FROM DUMMY ASCII :infile;\n`;
@@ -33,42 +32,38 @@ async function generateAscii(data) {
     return asciiContent.replace(/;\s*/g, ';\n').trim();
 }
 
-function processJson(data, keyPrefix = '') {
+function processJson(data, isRoot = true) {
     let content = '';
+    const keys = Object.keys(data);
 
-    // עיבוד לפי סוג הנתונים
-    if (typeof data === 'object' && !Array.isArray(data)) {
-        const keys = Object.keys(data);
-        keys.forEach((key, index) => {
-            const fullKey = keyPrefix ? `${keyPrefix}_${key}` : key;
-            const value = data[key];
+    keys.forEach((key, index) => {
+        const value = data[key];
+        const hasComma = index < keys.length - 1;
 
-            if (typeof value === 'object' && !Array.isArray(value)) {
-                content += `SELECT '"${key.toUpperCase()}": {' FROM DUMMY ASCII ADDTO :infile;\n`;
-                content += processJson(value, fullKey);
-                content += `SELECT '}' FROM DUMMY ASCII ADDTO :infile;\n`;
-            } else if (Array.isArray(value)) {
-                content += `SELECT '"${key.toUpperCase()}": [' FROM DUMMY ASCII ADDTO :infile;\n`;
-                value.forEach((item) => {
-                    content += `SELECT '{' FROM DUMMY ASCII ADDTO :infile;\n`;
-                    content += processJson(item, fullKey);
-                    content += `SELECT '}' FROM DUMMY ASCII ADDTO :infile;\n`;
-                });
-                content += `SELECT '],' FROM DUMMY ASCII ADDTO :infile;\n`;
-            } else {
-                content += createAsciiLine(fullKey.toUpperCase(), value, index < keys.length - 1);
-            }
-        });
-    }
+        if (typeof value === 'object' && !Array.isArray(value)) {
+            content += `SELECT '"${key}": {' FROM DUMMY ASCII ADDTO :infile;\n`;
+            content += processJson(value, false);
+            content += `SELECT '}' FROM DUMMY ASCII ADDTO :infile${hasComma ? ',' : ''};\n`;
+        } else if (Array.isArray(value)) {
+            content += `SELECT '"${key}": [' FROM DUMMY ASCII ADDTO :infile;\n`;
+            value.forEach((item, idx) => {
+                content += `SELECT '{' FROM DUMMY ASCII ADDTO :infile;\n`;
+                content += processJson(item, false);
+                content += `SELECT '}' FROM DUMMY ASCII ADDTO :infile${idx < value.length - 1 ? ',' : ''};\n`;
+            });
+            content += `SELECT ']' FROM DUMMY ASCII ADDTO :infile${hasComma ? ',' : ''};\n`;
+        } else {
+            content += createAsciiLine(key, value, hasComma);
+        }
+    });
+
     return content;
 }
 
-// פונקציה ליצירת שורה ב-ASCII
 function createAsciiLine(key, value, hasComma) {
     return `SELECT STRCAT('"${key}":"', :${key}, '"${hasComma ? ',' : ''}"') FROM DUMMY ASCII ADDTO :infile;\n`;
 }
 
-// פונקציה להורדת הקובץ
 function downloadAsciiFile(content) {
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
