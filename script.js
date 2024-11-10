@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// פונקציה ליצירת תוכן ה-ASCII באופן גנרי
+// פונקציה ליצירת תוכן ה-ASCII עם משתנים לפי הפרמטרים
 async function generateAscii(data) {
     let asciiContent = "/* :INFILE = 'C:\\tmp\\INFILE.txt'; */\n";
     asciiContent += `SELECT '{' FROM DUMMY ASCII UNICODE :infile;\n`;
@@ -45,13 +45,11 @@ function parseJsonToAscii(data, isFirst = false) {
             const isLast = index === keys.length - 1;
 
             if (typeof value === 'object' && !Array.isArray(value)) {
-                // עבור אובייקטים פנימיים
                 content += `SELECT '"${upperKey}":' FROM DUMMY ASCII UNICODE :infile;\n`;
                 content += `SELECT '{' FROM DUMMY ASCII UNICODE :infile;\n`;
                 content += parseJsonToAscii(value);
                 content += `SELECT '}' FROM DUMMY ASCII UNICODE :infile;\n`;
             } else if (Array.isArray(value)) {
-                // עבור מערכים
                 content += `SELECT '"${upperKey}":' FROM DUMMY ASCII UNICODE :infile;\n`;
                 content += `SELECT '[' FROM DUMMY ASCII UNICODE :infile;\n`;
                 value.forEach(item => {
@@ -61,16 +59,15 @@ function parseJsonToAscii(data, isFirst = false) {
                 });
                 content += `SELECT ']' FROM DUMMY ASCII UNICODE :infile;\n`;
             } else {
-                // עבור ערכים פשוטים
-                content += createAsciiLine(upperKey, value, !isLast);
+                content += createAsciiLine(upperKey, key, !isLast);
             }
         });
     }
     return content;
 }
 
-function createAsciiLine(key, value, hasComma = true) {
-    return `SELECT '"${key}": "', '${value}'${hasComma ? "',' " : " "}FROM DUMMY ASCII UNICODE :infile;\n`;
+function createAsciiLine(key, variableName, hasComma = true) {
+    return `SELECT '"${key}":"', :${variableName}, '${hasComma ? ",' " : " "}'FROM DUMMY ASCII UNICODE :infile;\n`;
 }
 
 function downloadAsciiFile(content) {
