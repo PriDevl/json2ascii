@@ -24,7 +24,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// פונקציה גנרית ליצירת תוכן ה-ASCII
 async function generateAscii(data) {
     let asciiContent = "/* :INFILE = 'C:\\tmp\\INFILE.txt'; */\n";
     asciiContent += `SELECT '{' FROM DUMMY ASCII :infile;\n`;
@@ -42,12 +41,10 @@ function processJson(data, isRoot = true) {
         const hasComma = index < keys.length - 1;
 
         if (typeof value === 'object' && !Array.isArray(value)) {
-            // אובייקט מקונן
             content += `SELECT '"${key}": {' FROM DUMMY ASCII ADDTO :infile;\n`;
             content += processJson(value, false);
             content += `SELECT '}' FROM DUMMY ASCII ADDTO :infile${hasComma ? ',' : ''};\n`;
         } else if (Array.isArray(value)) {
-            // רשימה
             content += `SELECT '"${key}": [' FROM DUMMY ASCII ADDTO :infile;\n`;
             value.forEach((item, idx) => {
                 content += `SELECT '{' FROM DUMMY ASCII ADDTO :infile;\n`;
@@ -56,7 +53,6 @@ function processJson(data, isRoot = true) {
             });
             content += `SELECT ']' FROM DUMMY ASCII ADDTO :infile${hasComma ? ',' : ''};\n`;
         } else {
-            // ערך פשוט
             content += createAsciiLine(key, value, hasComma);
         }
     });
@@ -66,7 +62,7 @@ function processJson(data, isRoot = true) {
 
 function createAsciiLine(key, value, hasComma) {
     if (typeof value === 'string' || typeof value === 'number') {
-        return `SELECT STRCAT('"${key}":"', :${key}, '"${hasComma ? ',' : ''}"') FROM DUMMY ASCII ADDTO :infile;\n`;
+        return `SELECT STRCAT('"${key}":"', :${key}, '"${hasComma ? ',' : ''}') FROM DUMMY ASCII ADDTO :infile;\n`;
     }
     return '';
 }
