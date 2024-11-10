@@ -36,35 +36,37 @@ async function generateAscii(data) {
 function createAsciiContent(data) {
     let content = '';
 
-    if (typeof data === 'object' && !Array.isArray(data)) {
-        const keys = Object.keys(data);
-        keys.forEach((key, index) => {
-            const upperKey = key.toUpperCase();
-            const value = data[key];
+    // התחלת מבנה ה-Data
+    content += `SELECT '"Data": {' FROM DUMMY ASCII ADDTO :infile;\n`;
 
-            if (typeof value === 'object' && !Array.isArray(value)) {
-                content += `SELECT '"${upperKey}": {' FROM DUMMY ASCII ADDTO :infile;\n`;
-                content += createAsciiContent(value);
+    // עיבוד כל פרמטר ב-JSON
+    Object.keys(data).forEach((key, index) => {
+        const upperKey = key.toUpperCase();
+        const value = data[key];
+
+        if (typeof value === 'object' && !Array.isArray(value)) {
+            content += `SELECT '"${upperKey}": {' FROM DUMMY ASCII ADDTO :infile;\n`;
+            content += createAsciiContent(value);
+            content += `SELECT '}' FROM DUMMY ASCII ADDTO :infile;\n`;
+        } else if (Array.isArray(value)) {
+            content += `SELECT '"${upperKey}": [' FROM DUMMY ASCII ADDTO :infile;\n`;
+            value.forEach(item => {
+                content += `SELECT '{' FROM DUMMY ASCII ADDTO :infile;\n`;
+                content += createAsciiContent(item);
                 content += `SELECT '}' FROM DUMMY ASCII ADDTO :infile;\n`;
-            } else if (Array.isArray(value)) {
-                content += `SELECT '"${upperKey}": [' FROM DUMMY ASCII ADDTO :infile;\n`;
-                value.forEach(item => {
-                    content += `SELECT '{' FROM DUMMY ASCII ADDTO :infile;\n`;
-                    content += createAsciiContent(item);
-                    content += `SELECT '}' FROM DUMMY ASCII ADDTO :infile;\n`;
-                });
-                content += `SELECT ']' FROM DUMMY ASCII ADDTO :infile;\n`;
-            } else {
-                content += createLine(upperKey, key, index < keys.length - 1);
-            }
-        });
-    }
+            });
+            content += `SELECT '],' FROM DUMMY ASCII ADDTO :infile;\n`;
+        } else {
+            content += createLine(upperKey, value, index < Object.keys(data).length - 1);
+        }
+    });
+
     return content;
 }
 
-// פונקציה ליצירת שורות
-function createLine(key, jsonKey, hasComma) {
-    return `SELECT STRCAT('"${key}":"', :${jsonKey}, '"${hasComma ? ',' : ''}"') FROM DUMMY ASCII ADDTO :infile;\n`;
+// פונקציה ליצירת שורות עבור ערכים פשוטים
+function createLine(key, value, hasComma) {
+    return `SELECT STRCAT('"${key}":"', :${key}, '"${hasComma ? ',' : ''}"') FROM DUMMY ASCII ADDTO :infile;\n`;
 }
 
 // פונקציה להורדת הקובץ
