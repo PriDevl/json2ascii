@@ -46,7 +46,7 @@ function createAsciiContent(data) {
             if (typeof value === 'object' && !Array.isArray(value)) {
                 content += `SELECT '"${upperKey}": {' FROM DUMMY ASCII ADDTO :infile;\n`;
                 content += createAsciiContent(value);
-                content += `SELECT '},' FROM DUMMY ASCII ADDTO :infile${isLastItem ? '' : ','};\n`;
+                content += `SELECT '}${isLastItem ? '' : ','}' FROM DUMMY ASCII ADDTO :infile;\n`;
             } else if (Array.isArray(value)) {
                 content += `SELECT '"${upperKey}": [' FROM DUMMY ASCII ADDTO :infile;\n`;
                 value.forEach((item, idx) => {
