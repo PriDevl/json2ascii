@@ -27,33 +27,35 @@ document.addEventListener('DOMContentLoaded', () => {
 // פונקציה ליצירת תוכן ה-ASCII
 async function generateAsciiFromJson(data) {
     let asciiContent = "/* :INFILE = 'C:\\tmp\\INFILE.txt'; */\n";
+    asciiContent += `SELECT '{' FROM DUMMY ASCII ADDTO :infile;\n`;
     asciiContent += createAsciiContent(data);
+    asciiContent += `SELECT '}' FROM DUMMY ASCII ADDTO :infile;\n`;
     return asciiContent.replace(/;\s*/g, ';\n').trim();
 }
 
-function createAsciiContent(data, isFirst = true) {
-    let content = isFirst ? `SELECT '{' FROM DUMMY ASCII :infile;\n` : `SELECT '{' FROM DUMMY ASCII ADDTO :infile;\n`;
-
+function createAsciiContent(data) {
+    let content = '';
     if (typeof data === 'object' && !Array.isArray(data)) {
         const keys = Object.keys(data);
         keys.forEach((key, index) => {
             const upperKey = key.toUpperCase();
             const value = data[key];
+            const isLastItem = index === keys.length - 1;
 
             if (typeof value === 'object' && !Array.isArray(value)) {
                 content += `SELECT '"${upperKey}": {' FROM DUMMY ASCII ADDTO :infile;\n`;
-                content += createAsciiContent(value, false);
-                content += `SELECT '}' FROM DUMMY ASCII ADDTO :infile;\n`;
+                content += createAsciiContent(value);
+                content += `SELECT '}' FROM DUMMY ASCII ADDTO :infile${isLastItem ? '' : ','};\n`;
             } else if (Array.isArray(value)) {
                 content += `SELECT '"${upperKey}": [' FROM DUMMY ASCII ADDTO :infile;\n`;
                 value.forEach((item, idx) => {
                     content += `SELECT '{' FROM DUMMY ASCII ADDTO :infile;\n`;
-                    content += createAsciiContent(item, false);
+                    content += createAsciiContent(item);
                     content += `SELECT '}' FROM DUMMY ASCII ADDTO :infile${idx < value.length - 1 ? ',' : ''};\n`;
                 });
-                content += `SELECT ']' FROM DUMMY ASCII ADDTO :infile;\n`;
+                content += `SELECT ']' FROM DUMMY ASCII ADDTO :infile${isLastItem ? '' : ','};\n`;
             } else {
-                content += createLine(upperKey, value, index < keys.length - 1);
+                content += createLine(upperKey, value, !isLastItem);
             }
         });
     }
