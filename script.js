@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
         jsonInput.value = '';
     });
 
-    downloadButton.addEventListener('click', async () => {
+    downloadButton.addEventListener('click', () => {
         const jsonData = jsonInput.value.trim();
         if (!jsonData) {
             showAlert('Please paste your JSON data first.');
@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const parsedData = JSON.parse(jsonData);
-            const asciiContent = await generateAsciiFromJson(parsedData);
+            const asciiContent = generateAsciiFromJson(parsedData);
             downloadAsciiFile(asciiContent);
         } catch (error) {
             showAlert(`Invalid JSON format: ${error.message}`);
@@ -25,38 +25,40 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // פונקציה ליצירת תוכן ה-ASCII
-async function generateAsciiFromJson(data) {
+function generateAsciiFromJson(data) {
     let asciiContent = "/* :INFILE = 'C:\\tmp\\INFILE.txt'; */\n";
-    asciiContent += createAsciiContent(data);
+    asciiContent += `SELECT '{' FROM DUMMY ASCII :infile;\n`;
+    asciiContent += processObject(data);
+    asciiContent += `SELECT '}' FROM DUMMY ASCII :infile;\n`;
     return asciiContent.replace(/;\s*/g, ';\n').trim();
 }
 
-function createAsciiContent(data, isFirst = true) {
-    let content = isFirst ? `SELECT '{' FROM DUMMY ASCII :infile;\n` : `SELECT '{' FROM DUMMY ASCII ADDTO :infile;\n`;
+function processObject(data) {
+    let content = '';
+    const keys = Object.keys(data);
 
-    if (typeof data === 'object' && !Array.isArray(data)) {
-        const keys = Object.keys(data);
-        keys.forEach((key, index) => {
-            const upperKey = key.toUpperCase();
-            const value = data[key];
+    keys.forEach((key, index) => {
+        const upperKey = key.toUpperCase();
+        const value = data[key];
+        const isLast = index === keys.length - 1;
 
-            if (typeof value === 'object' && !Array.isArray(value)) {
-                content += `SELECT '"${upperKey}": {' FROM DUMMY ASCII ADDTO :infile;\n`;
-                content += createAsciiContent(value, false);
-            } else if (Array.isArray(value)) {
-                content += `SELECT '"${upperKey}": [' FROM DUMMY ASCII ADDTO :infile;\n`;
-                value.forEach((item, itemIndex) => {
-                    content += `SELECT '{' FROM DUMMY ASCII ADDTO :infile;\n`;
-                    content += createAsciiContent(item, false);
-                    content += `SELECT '}' FROM DUMMY ASCII ADDTO :infile${itemIndex < value.length - 1 ? ',' : ''};\n`;
-                });
-                content += `SELECT ']' FROM DUMMY ASCII ADDTO :infile;\n`;
-            } else {
-                content += createAsciiLine(upperKey, value, index < keys.length - 1);
-            }
-        });
-        content += `SELECT '}' FROM DUMMY ASCII ADDTO :infile;\n`;
-    }
+        if (typeof value === 'object' && !Array.isArray(value)) {
+            content += `SELECT '"${upperKey}": {' FROM DUMMY ASCII ADDTO :infile;\n`;
+            content += processObject(value);
+            content += `SELECT '}' FROM DUMMY ASCII ADDTO :infile${isLast ? '' : ','};\n`;
+        } else if (Array.isArray(value)) {
+            content += `SELECT '"${upperKey}": [' FROM DUMMY ASCII ADDTO :infile;\n`;
+            value.forEach((item, itemIndex) => {
+                content += `SELECT '{' FROM DUMMY ASCII ADDTO :infile;\n`;
+                content += processObject(item);
+                content += `SELECT '}' FROM DUMMY ASCII ADDTO :infile${itemIndex < value.length - 1 ? ',' : ''};\n`;
+            });
+            content += `SELECT ']' FROM DUMMY ASCII ADDTO :infile${isLast ? '' : ','};\n`;
+        } else {
+            content += createAsciiLine(upperKey, value, !isLast);
+        }
+    });
+
     return content;
 }
 
