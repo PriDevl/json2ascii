@@ -10,29 +10,30 @@ document.addEventListener('DOMContentLoaded', () => {
     downloadButton.addEventListener('click', async () => {
         const jsonData = jsonInput.value.trim();
         if (!jsonData) {
-            alert('Please paste your JSON data first.');
+            showAlert('Please paste your JSON data first.');
             return;
         }
 
         try {
             const parsedData = JSON.parse(jsonData);
-            const asciiContent = await generateAsciiFromJson(parsedData);
+            const asciiContent = generateAsciiFromJson(parsedData);
             downloadAsciiFile(asciiContent);
         } catch (error) {
-            alert(`Invalid JSON format: ${error.message}`);
+            showAlert(`Invalid JSON format: ${error.message}`);
         }
     });
 });
 
 // פונקציה ליצירת תוכן ה-ASCII
-async function generateAsciiFromJson(data) {
-    let asciiContent = "/* :INFILE = 'C:\\tmp\\INFILE.txt'; */\n";
-    asciiContent += `SELECT '{' FROM DUMMY ASCII ADDTO :infile;\n`;
+function generateAsciiFromJson(data) {
+    let asciiContent = "/* :INFILE = 'C:\\tmp\\infile.txt'; */\n";
+    asciiContent += `SELECT '{' FROM DUMMY ASCII :infile;\n`;
     asciiContent += createAsciiContent(data);
     asciiContent += `SELECT '}' FROM DUMMY ASCII ADDTO :infile;\n`;
     return asciiContent.replace(/;\s*/g, ';\n').trim();
 }
 
+// פונקציה גנרית ליצירת התוכן של ASCII
 function createAsciiContent(data) {
     let content = '';
     if (typeof data === 'object' && !Array.isArray(data)) {
@@ -53,7 +54,7 @@ function createAsciiContent(data) {
                     content += createAsciiContent(item);
                     content += `SELECT '}' FROM DUMMY ASCII ADDTO :infile${idx < value.length - 1 ? ',' : ''};\n`;
                 });
-                content += `SELECT ']' FROM DUMMY ASCII ADDTO :infile${isLastItem ? '' : ','};\n`;
+                content += `SELECT '],' FROM DUMMY ASCII ADDTO :infile;\n`;
             } else {
                 content += createLine(upperKey, value, !isLastItem);
             }
@@ -62,10 +63,12 @@ function createAsciiContent(data) {
     return content;
 }
 
+// פונקציה ליצירת שורה עבור ערך יחיד
 function createLine(key, value, hasComma) {
     return `SELECT STRCAT('"${key}":"', :${key}, '"${hasComma ? ',' : ''}') FROM DUMMY ASCII ADDTO :infile;\n`;
 }
 
+// פונקציה להורדת קובץ
 function downloadAsciiFile(content) {
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -74,4 +77,9 @@ function downloadAsciiFile(content) {
     a.download = 'asciifile.txt';
     a.click();
     URL.revokeObjectURL(url);
+}
+
+// פונקציה להצגת הודעת שגיאה
+function showAlert(message) {
+    alert(message);
 }
