@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // פונקציה ליצירת תוכן ה-ASCII בפורמט הנכון
 async function generateAsciiFromJson(data) {
     let asciiContent = "/* :INFILE = 'C:\\tmp\\INFILE.txt'; */\n";
-    asciiContent += createAsciiContent(data);
+    asciiContent += createAsciiContent(data, true);
     return asciiContent.replace(/;\s*/g, ';\n').trim();
 }
 
@@ -47,7 +47,9 @@ function createAsciiContent(data, isFirst = true) {
             } else if (Array.isArray(value)) {
                 content += `SELECT '"${upperKey}":' FROM DUMMY TABS ADDTO ASCII UNICODE :INFILE;\n`;
                 value.forEach((item) => {
+                    content += `SELECT '{' FROM DUMMY TABS ADDTO ASCII UNICODE :INFILE;\n`;
                     content += createAsciiContent(item, false);
+                    content += `SELECT '}' FROM DUMMY TABS ADDTO ASCII UNICODE :INFILE;\n`;
                 });
             } else {
                 content += createLine(upperKey, value, !isLast);
