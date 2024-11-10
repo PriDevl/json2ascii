@@ -7,80 +7,71 @@ document.addEventListener('DOMContentLoaded', () => {
         jsonInput.value = '';
     });
 
-    downloadButton.addEventListener('click', () => {
+    downloadButton.addEventListener('click', async () => {
         const jsonData = jsonInput.value.trim();
-
         if (!jsonData) {
-            alert('Please paste your JSON response first.');
+            showAlert('Please paste your JSON data first.');
             return;
         }
 
         try {
             const parsedData = JSON.parse(jsonData);
-            const asciiContent = generateAsciiFromJson(parsedData);
+            const asciiContent = await generateAsciiFromJson(parsedData);
             downloadAsciiFile(asciiContent);
         } catch (error) {
-            alert(`Invalid JSON format. Error: ${error.message}`);
+            showAlert(`Invalid JSON format: ${error.message}`);
         }
     });
 });
 
-// פונקציה ליצירת תוכן ה-ASCII עם טיפול בהתחברות שורות
-function generateAsciiFromJson(data, indent = 0, isFirstLine = true) {
-    let asciiContent = '';
-
-    if (isFirstLine) {
-        asciiContent += "/* :INFILE = 'C:\\tmp\\INFILE.txt'; */\n";
-        isFirstLine = false;
-        asciiContent += `SELECT '{' FROM DUMMY TABS ASCII :INFILE;\n`;
-    } else {
-        asciiContent += `SELECT '{' FROM DUMMY TABS ADDTO ASCII :INFILE;\n`;
-    }
-
-    if (typeof data === 'object' && !Array.isArray(data)) {
-        const keys = Object.keys(data);
-
-        keys.forEach((key, index) => {
-            const upperKey = key.toUpperCase();
-            const value = data[key];
-
-            if (typeof value === 'object' && !Array.isArray(value)) {
-                asciiContent += `SELECT '"${upperKey}":' FROM DUMMY TABS ADDTO ASCII :INFILE;\n`;
-                asciiContent += generateAsciiFromJson(value, indent + 2, false);
-            } else if (Array.isArray(value)) {
-                asciiContent += `SELECT '"${upperKey}":' FROM DUMMY TABS ADDTO ASCII :INFILE;\n`;
-                value.forEach(item => {
-                    asciiContent += generateAsciiFromJson(item, indent + 2, false);
-                });
-            } else {
-                let line = `SELECT '"${upperKey}": "':${upperKey}"'`;
-                if (index < keys.length - 1) {
-                    line += "','";
-                }
-                line += ` FROM DUMMY TABS ADDTO ASCII :INFILE;\n`;
-                asciiContent += line;
-            }
-        });
-        asciiContent += `SELECT '}' FROM DUMMY TABS ADDTO ASCII :INFILE;\n`;
-    } else if (Array.isArray(data)) {
-        data.forEach(item => {
-            asciiContent += generateAsciiFromJson(item, indent, false);
-        });
-    }
-
-    // טיפול בהתחברות שורות
+// פונקציה ליצירת תוכן ה-ASCII
+async function generateAsciiFromJson(data) {
+    let asciiContent = "/* :INFILE = 'C:\\tmp\\INFILE.txt'; */\n";
+    asciiContent += createAsciiContent(data);
     return asciiContent.replace(/;\s*/g, ';\n').trim();
 }
 
-// פונקציה להורדת הקובץ
+function createAsciiContent(data, isFirst = true) {
+    let content = isFirst ? `SELECT '{' FROM DUMMY TABS ASCII :INFILE;\n` : `SELECT '{' FROM DUMMY TABS ADDTO ASCII :INFILE;\n`;
+
+    if (typeof data === 'object' && !Array.isArray(data)) {
+        const keys = Object.keys(data);
+        keys.forEach((key, index) => {
+            const upperKey = key.toUpperCase();
+            const value = data[key];
+            const isLast = index === keys.length - 1;
+
+            if (typeof value === 'object' && !Array.isArray(value)) {
+                content += `SELECT '"${upperKey}":' FROM DUMMY TABS ADDTO ASCII :INFILE;\n`;
+                content += createAsciiContent(value, false);
+            } else if (Array.isArray(value)) {
+                content += `SELECT '"${upperKey}":' FROM DUMMY TABS ADDTO ASCII :INFILE;\n`;
+                value.forEach((item, idx) => {
+                    content += createAsciiContent(item, false);
+                });
+            } else {
+                content += createLine(upperKey, value, !isLast);
+            }
+        });
+        content += `SELECT '}' FROM DUMMY TABS ADDTO ASCII :INFILE;\n`;
+    }
+    return content;
+}
+
+function createLine(key, value, hasComma) {
+    return `SELECT '"${key}": "':${key}"'${hasComma ? "',' " : " "}FROM DUMMY TABS ADDTO ASCII :INFILE;\n`;
+}
+
 function downloadAsciiFile(content) {
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = 'asciifile.txt';
-    document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
     URL.revokeObjectURL(url);
+}
+
+function showAlert(message) {
+    alert(message);
 }
