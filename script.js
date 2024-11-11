@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const jsonInput = document.getElementById('jsonInput');
     const clearButton = document.getElementById('clearButton');
     const downloadButton = document.getElementById('downloadAsciiButton');
-    
+
     // ניקוי שדה ה־JSON
     clearButton.addEventListener('click', () => {
         jsonInput.value = '';
@@ -28,29 +28,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // פונקציה ליצירת תוכן ה־ASCII
 function generateAsciiFromJson(data) {
-    let asciiContent = "/*:INFILE = 'C:/tmp/infile.txt';*/\n";
+    let asciiContent = "/* :INFILE = 'C:\\tmp\\infile.txt'; */\n";
     asciiContent += `SELECT '{'\nFROM DUMMY ASCII UNICODE :infile;\n`;
     asciiContent += createAsciiContent(data);
     asciiContent += `SELECT '}'\nFROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
     return asciiContent.replace(/;\s*/g, ';\n').trim();
 }
 
-// פונקציה גנרית ליצירת התוכן של ASCII
+// פונקציה גנרית ליצירת התוכן של ASCII לפי המבנה של ה־JSON
 function createAsciiContent(data) {
     let content = '';
     if (typeof data === 'object' && !Array.isArray(data)) {
         const keys = Object.keys(data);
         keys.forEach((key, index) => {
-            const upperKey = key.toUpperCase();
             const value = data[key];
             const isLastItem = index === keys.length - 1;
 
             if (typeof value === 'object' && !Array.isArray(value)) {
-                content += `SELECT '"${upperKey}": {'\nFROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
+                content += `SELECT '"${key}": {'\nFROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
                 content += createAsciiContent(value);
                 content += `SELECT '}${isLastItem ? '' : ','}'\nFROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
             } else if (Array.isArray(value)) {
-                content += `SELECT '"${upperKey}": ['\nFROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
+                content += `SELECT '"${key}": ['\nFROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
                 value.forEach((item, idx) => {
                     content += `SELECT '{'\nFROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
                     content += createAsciiContent(item);
@@ -58,15 +57,16 @@ function createAsciiContent(data) {
                 });
                 content += `SELECT ']${isLastItem ? '' : ','}'\nFROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
             } else {
-                content += createLine(upperKey, value, !isLastItem);
+                content += createLine(key, value, !isLastItem);
             }
         });
     }
     return content;
 }
 
-// פונקציה ליצירת שורה עבור ערך יחיד
+// פונקציה ליצירת שורה עבור ערך יחיד עם שמות פרמטרים דינמיים
 function createLine(key, value, hasComma) {
+    // יצירת שורת ASCII מתוך JSON לפי שמות הפרמטרים המקוריים
     return `SELECT STRCAT('"${key}":"', :${key}, '"${hasComma ? ',' : ''}')\nFROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
 }
 
@@ -81,7 +81,7 @@ function downloadAsciiFile(content) {
     URL.revokeObjectURL(url);
 }
 
-// פונקציה להצגת הודעות שגיאה
+// פונקציה להצגת הודעת שגיאה
 function showAlert(message) {
     alert(message);
 }
