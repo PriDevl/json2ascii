@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // פונקציה ליצירת תוכן ה־ASCII
 function generateAsciiFromJson(data) {
-    let asciiContent = "/* :INFILE = 'C:\\tmp\\infile.txt'; */\n";
+    let asciiContent = "/*:INFILE = 'C:/tmp/infile.txt';*/\n";
     asciiContent += `SELECT '{'\nFROM DUMMY ASCII UNICODE :infile;\n`;
     asciiContent += createAsciiContent(data);
     asciiContent += `SELECT '}'\nFROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
@@ -48,15 +48,15 @@ function createAsciiContent(data) {
             if (typeof value === 'object' && !Array.isArray(value)) {
                 content += `SELECT '"${upperKey}": {'\nFROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
                 content += createAsciiContent(value);
-                content += `SELECT '}'\nFROM DUMMY ASCII UNICODE ADDTO :infile${isLastItem ? '' : ','};\n`;
+                content += `SELECT '}${isLastItem ? '' : ','}'\nFROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
             } else if (Array.isArray(value)) {
                 content += `SELECT '"${upperKey}": ['\nFROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
                 value.forEach((item, idx) => {
                     content += `SELECT '{'\nFROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
                     content += createAsciiContent(item);
-                    content += `SELECT '}'\nFROM DUMMY ASCII UNICODE ADDTO :infile${idx < value.length - 1 ? ',' : ''};\n`;
+                    content += `SELECT '}${idx < value.length - 1 ? ',' : ''}'\nFROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
                 });
-                content += `SELECT ']'\nFROM DUMMY ASCII UNICODE ADDTO :infile${isLastItem ? '' : ','};\n`;
+                content += `SELECT ']${isLastItem ? '' : ','}'\nFROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
             } else {
                 content += createLine(upperKey, value, !isLastItem);
             }
