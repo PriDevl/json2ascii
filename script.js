@@ -4,7 +4,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const downloadAsciiButton = document.getElementById('downloadAsciiButton');
     const downloadXmlButton = document.getElementById('downloadXmlButton');
 
-    clearButton.addEventListener('click', () => jsonInput.value = '');
+    clearButton.addEventListener('click', () => {
+        jsonInput.value = '';
+    });
 
     downloadAsciiButton.addEventListener('click', () => {
         const jsonData = jsonInput.value.trim();
@@ -30,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const parsedData = JSON.parse(jsonData);
             const xmlContent = generateXmlFromJson(parsedData);
-            downloadFile(xmlContent, 'file.xml');
+            downloadFile(xmlContent, 'data.xml');
         } catch (error) {
             alert(`Invalid JSON format: ${error.message}`);
         }
@@ -40,12 +42,12 @@ document.addEventListener('DOMContentLoaded', () => {
 function generateAsciiFromJson(data) {
     let asciiContent = "/* :INFILE = 'C:\\tmp\\infile.txt'; */\n";
     asciiContent += `SELECT '{' FROM DUMMY ASCII UNICODE :infile;\n`;
-    asciiContent += createAsciiContent(data);
-    asciiContent += `SELECT '} ${true ? '' : ','}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
+    asciiContent += createAsciiContent(data, true);
+    asciiContent += `SELECT '} ${isLastItem()}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
     return asciiContent;
 }
 
-function createAsciiContent(data) {
+function createAsciiContent(data, isFirst) {
     let content = '';
     if (typeof data === 'object' && !Array.isArray(data)) {
         const keys = Object.keys(data);
@@ -66,33 +68,40 @@ function createAsciiContent(data) {
                 });
                 content += `SELECT '] ${isLastItem ? '' : ','}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
             } else {
-                content += `SELECT STRCAT('"${key}":"', :${key}, '" ${isLastItem ? '' : ','}') FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
+                content += `SELECT STRCAT('"${key}":"', :${key}, '"${isLastItem ? '' : ','}') FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
             }
         });
     }
     return content;
 }
 
-function generateXmlFromJson(data, indent = '') {
-    let xmlContent = '';
+function generateXmlFromJson(data) {
+    let xmlContent = '<?xml version="1.0" encoding="UTF-8"?>\n';
+    xmlContent += createXmlContent(data);
+    return xmlContent;
+}
+
+function createXmlContent(data, indent = '') {
+    let content = '';
     for (const key in data) {
-        if (typeof data[key] === 'object' && !Array.isArray(data[key])) {
-            xmlContent += `${indent}<${key}>\n`;
-            xmlContent += generateXmlFromJson(data[key], indent + '  ');
-            xmlContent += `${indent}</${key}>\n`;
-        } else if (Array.isArray(data[key])) {
-            xmlContent += `${indent}<${key}>\n`;
-            data[key].forEach(item => {
-                xmlContent += `${indent}  <item>\n`;
-                xmlContent += generateXmlFromJson(item, indent + '    ');
-                xmlContent += `${indent}  </item>\n`;
+        const value = data[key];
+        if (typeof value === 'object' && !Array.isArray(value)) {
+            content += `${indent}<${key}>\n`;
+            content += createXmlContent(value, indent + '  ');
+            content += `${indent}</${key}>\n`;
+        } else if (Array.isArray(value)) {
+            content += `${indent}<${key}>\n`;
+            value.forEach(item => {
+                content += `${indent}  <item>\n`;
+                content += createXmlContent(item, indent + '    ');
+                content += `${indent}  </item>\n`;
             });
-            xmlContent += `${indent}</${key}>\n`;
+            content += `${indent}</${key}>\n`;
         } else {
-            xmlContent += `${indent}<${key}>${data[key]}</${key}>\n`;
+            content += `${indent}<${key}>${value}</${key}>\n`;
         }
     }
-    return xmlContent;
+    return content;
 }
 
 function downloadFile(content, filename) {
@@ -101,6 +110,8 @@ function downloadFile(content, filename) {
     const a = document.createElement('a');
     a.href = url;
     a.download = filename;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
 }
