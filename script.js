@@ -70,7 +70,7 @@ function createAsciiContent(data) {
                     content += createAsciiContent(item);
                     content += `SELECT '}${idx < value.length - 1 ? ',' : ''}' FROM DUMMY ASCII ADDTO :infile;\n`;
                 });
-                content += `SELECT '],' FROM DUMMY ASCII ADDTO :infile;\n`;
+                content += `SELECT ']${isLastItem ? '' : ','}' FROM DUMMY ASCII ADDTO :infile;\n`;
             } else {
                 content += `SELECT STRCAT('"${upperKey}":"', :${upperKey}, '"${!isLastItem ? ',' : ''}') FROM DUMMY ASCII ADDTO :infile;\n`;
             }
