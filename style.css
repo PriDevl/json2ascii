@@ -1,24 +1,69 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JSON to ASCII & XML Generator</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <main class="container">
-        <h2>JSON to ASCII & XML Generator</h2>
-        <textarea id="jsonInput" placeholder="Paste your JSON here..."></textarea>
-        <div class="buttons">
-            <button id="clearButton">Clear</button>
-            <button id="downloadAsciiButton">Download ASCII</button>
-            <button id="downloadXmlButton">Download XML</button>
-        </div>
-        <div class="footer">
-            <a href="mailto:myweb79@gmail.com">myweb79@gmail.com</a>
-        </div>
-    </main>
-    <script src="script.js"></script>
-</body>
-</html>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #f0f4f8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.container {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 0;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 600px;
+    text-align: center;
+}
+
+textarea {
+    width: 100%;
+    height: 250px;
+    padding: 15px;
+    border: 2px solid #ddd;
+    border-radius: 0;
+    resize: none;
+    font-family: monospace;
+    box-sizing: border-box;
+    margin-bottom: 20px;
+}
+
+.buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+button {
+    padding: 12px 20px;
+    background-color: #0074d9;
+    color: #ffffff;
+    border: none;
+    border-radius: 0;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+.footer {
+    margin-top: 20px;
+}
+
+.footer a {
+    color: #7f8c8d;
+    text-decoration: none;
+    font-size: 14px;
+}
+.footer a:hover {
+    text-decoration: underline;
+}
