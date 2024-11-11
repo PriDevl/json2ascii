@@ -1,102 +1,24 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    background-color: #f0f4f8;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    overflow-x: hidden; /* מונע גלילה אופקית */
-}
-
-.container {
-    background-color: #ffffff;
-    padding: 20px;
-    width: 90%;
-    max-width: 600px;
-    text-align: center;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-}
-
-h2 {
-    margin-bottom: 20px;
-    font-size: 24px;
-    color: #333;
-}
-
-textarea {
-    width: 100%;
-    max-width: 100%;
-    height: 250px;
-    padding: 15px;
-    border: 2px solid #ddd;
-    resize: none;
-    font-family: monospace;
-    box-sizing: border-box;
-    margin-bottom: 20px;
-}
-
-.buttons {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    flex-wrap: wrap;
-}
-
-button {
-    padding: 12px 25px;
-    background-color: #5a9bd5; /* גוון כחול עדין יותר */
-    color: #ffffff;
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    margin-top: 10px;
-}
-
-button:hover {
-    background-color: #4a8cc0;
-}
-
-button:focus {
-    outline: none;
-}
-
-button:active {
-    background-color: #3975a7;
-}
-
-a {
-    display: block;
-    text-align: center;
-    margin-top: 20px;
-    text-decoration: none;
-    color: #888888; /* צבע אפור בינוני */
-    font-size: 14px;
-}
-
-a:hover {
-    color: #666666;
-}
-
-/* תיקונים לרספונסיביות */
-@media (max-width: 600px) {
-    .container {
-        width: 100%;
-        padding: 15px;
-    }
-    
-    textarea {
-        height: 200px;
-    }
-
-    button {
-        flex-grow: 1;
-        padding: 10px;
-    }
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON to ASCII & XML Generator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main class="container">
+        <h2>JSON to ASCII & XML Generator</h2>
+        <textarea id="jsonInput" placeholder="Paste your JSON here..."></textarea>
+        <div class="buttons">
+            <button id="clearButton">Clear</button>
+            <button id="downloadAsciiButton">Download ASCII</button>
+            <button id="downloadXmlButton">Download XML</button>
+        </div>
+        <div class="footer">
+            <a href="mailto:myweb79@gmail.com">myweb79@gmail.com</a>
+        </div>
+    </main>
+    <script src="script.js"></script>
+</body>
+</html>
