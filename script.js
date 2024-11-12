@@ -1,12 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
     const jsonInput = document.getElementById('jsonInput');
-    const clearButton = document.getElementById('clearButton');
-    const downloadAsciiButton = document.getElementById('downloadAsciiButton');
-    const downloadXmlButton = document.getElementById('downloadXmlButton');
 
-    clearButton.addEventListener('click', () => {
-        jsonInput.value = '';
+    jsonInput.addEventListener('focus', () => {
+        document.body.style.overflow = 'hidden';
     });
+
+    jsonInput.addEventListener('blur', () => {
+        document.body.style.overflow = 'auto';
+    });
+});
 
     downloadAsciiButton.addEventListener('click', () => {
         const jsonData = jsonInput.value.trim();
