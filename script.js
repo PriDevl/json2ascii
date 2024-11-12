@@ -41,11 +41,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-function generateAsciiFromJson(data, isLastItem = true) {
+function generateAsciiFromJson(data) {
     let content = "/* :INFILE = 'C:\\tmp\\infile.txt'; */\n";
     content += `SELECT '{' FROM DUMMY ASCII UNICODE :infile;\n`;
     content += createAsciiContent(data);
-    content += `SELECT '} ${isLastItem ? '' : ','}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
+    content += `SELECT '} ${isLastItem(true) ? '' : ','}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
     return content;
 }
 
@@ -66,7 +66,7 @@ function createAsciiContent(data) {
                 value.forEach((item, idx) => {
                     content += `SELECT '{' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
                     content += createAsciiContent(item);
-                    content += `SELECT '} ${idx < value.length - 1 ? ',' : ''}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
+                    content += `SELECT '} ${idx < value.length - 1 ? '' : ','}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
                 });
                 content += `SELECT '] ${isLastItem ? '' : ','}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
             } else {
@@ -109,4 +109,8 @@ function downloadFile(content, filename) {
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
+}
+
+function isLastItem(isLast) {
+    return isLast ? '' : ',';
 }
