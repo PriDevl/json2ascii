@@ -16,7 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const asciiContent = generateAsciiFromJson(parsedData);
                 downloadFile(asciiContent, 'output.ascii');
             } catch (error) {
-                alert('Invalid JSON format.');
+                alert('Invalid JSON format: ' + error.message);
+                console.error('Error parsing JSON:', error);
             }
         } else {
             alert('Please paste your JSON data first.');
@@ -31,7 +32,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const xmlContent = generateXmlFromJson(parsedData);
                 downloadFile(xmlContent, 'output.xml');
             } catch (error) {
-                alert('Invalid JSON format.');
+                alert('Invalid JSON format: ' + error.message);
+                console.error('Error parsing JSON:', error);
             }
         } else {
             alert('Please paste your JSON data first.');
@@ -40,11 +42,16 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function generateAsciiFromJson(data) {
-    let asciiContent = "/* :INFILE = 'C:\\tmp\\infile.txt'; */\n";
-    asciiContent += `SELECT '{' FROM DUMMY ASCII UNICODE :infile;\n`;
-    asciiContent += createAsciiContent(data, true);
-    asciiContent += `SELECT '} ${isLastItem()}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
-    return asciiContent;
+    try {
+        let asciiContent = "/* :INFILE = 'C:\\tmp\\infile.txt'; */\n";
+        asciiContent += `SELECT '{' FROM DUMMY ASCII UNICODE :infile;\n`;
+        asciiContent += createAsciiContent(data, true);
+        asciiContent += `SELECT '} ${isLastItem()}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
+        return asciiContent;
+    } catch (error) {
+        console.error('Error generating ASCII:', error);
+        throw error;
+    }
 }
 
 function createAsciiContent(data, isFirst = false) {
@@ -79,32 +86,30 @@ function createLine(key, value, hasComma) {
     return `SELECT STRCAT('"${key}":"', :${key}, '"${hasComma ? ',' : ''}') FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
 }
 
+function isLastItem() {
+    return '';
+}
+
 function generateXmlFromJson(data) {
     let xmlContent = '<?xml version="1.0" encoding="UTF-8"?>\n';
     xmlContent += createXmlContent(data);
     return xmlContent;
 }
 
-function createXmlContent(data, tagName = '') {
+function createXmlContent(data) {
     let content = '';
-    if (typeof data === 'object' && !Array.isArray(data)) {
-        Object.keys(data).forEach(key => {
-            const value = data[key];
-            if (Array.isArray(value)) {
-                value.forEach(item => {
-                    content += `<${key}>\n`;
-                    content += createXmlContent(item);
-                    content += `</${key}>\n`;
-                });
-            } else if (typeof value === 'object') {
-                content += `<${key}>\n`;
-                content += createXmlContent(value);
-                content += `</${key}>\n`;
-            } else {
-                content += `<${key}>${value}</${key}>\n`;
-            }
-        });
-    }
+    Object.keys(data).forEach(key => {
+        const value = data[key];
+        if (typeof value === 'object' && !Array.isArray(value)) {
+            content += `<${key}>\n${createXmlContent(value)}</${key}>\n`;
+        } else if (Array.isArray(value)) {
+            value.forEach(item => {
+                content += `<${key}>\n${createXmlContent(item)}</${key}>\n`;
+            });
+        } else {
+            content += `<${key}>${value}</${key}>\n`;
+        }
+    });
     return content;
 }
 
