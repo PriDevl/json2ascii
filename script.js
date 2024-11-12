@@ -1,8 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     const jsonInput = document.getElementById('jsonInput');
     const clearButton = document.getElementById('clearButton');
-    const downloadAsciiButton = document.getElementById('downloadAsciiButton');
-    const downloadXmlButton = document.getElementById('downloadXmlButton');
+    const downloadAsciiButton = document.getElementById('downloadAscii');
+    const downloadXmlButton = document.getElementById('downloadXml');
 
     clearButton.addEventListener('click', () => {
         jsonInput.value = '';
@@ -14,12 +14,13 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Please paste your JSON data first.');
             return;
         }
+
         try {
             const parsedData = JSON.parse(jsonData);
             const asciiContent = generateAsciiFromJson(parsedData);
-            downloadFile(asciiContent, 'ascii.txt');
+            downloadFile(asciiContent, 'output.ascii');
         } catch (error) {
-            alert('Invalid JSON format');
+            alert('Invalid JSON format.');
         }
     });
 
@@ -29,70 +30,75 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Please paste your JSON data first.');
             return;
         }
+
         try {
             const parsedData = JSON.parse(jsonData);
             const xmlContent = generateXmlFromJson(parsedData);
-            downloadFile(xmlContent, 'data.xml');
+            downloadFile(xmlContent, 'output.xml');
         } catch (error) {
-            alert('Invalid JSON format');
+            alert('Invalid JSON format.');
         }
     });
 });
 
-function generateAsciiFromJson(data) {
-    let asciiContent = "/* :INFILE = 'C:\\tmp\\infile.txt'; */\n";
-    asciiContent += `SELECT '{' FROM DUMMY ASCII UNICODE :infile;\n`;
-    asciiContent += createAsciiContent(data, true);
-    asciiContent += `SELECT '} ${isLastItem()}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
-    return asciiContent;
+function generateAsciiFromJson(data, isLastItem = true) {
+    let content = "/* :INFILE = 'C:\\tmp\\infile.txt'; */\n";
+    content += `SELECT '{' FROM DUMMY ASCII UNICODE :infile;\n`;
+    content += createAsciiContent(data);
+    content += `SELECT '} ${isLastItem ? '' : ','}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
+    return content;
 }
 
-function createAsciiContent(data, isLastItem) {
+function createAsciiContent(data) {
     let content = '';
-    const keys = Object.keys(data);
-    keys.forEach((key, index) => {
-        const value = data[key];
-        const isLast = index === keys.length - 1;
-        if (Array.isArray(value)) {
-            content += `SELECT '"${key}": [' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
-            value.forEach((item, idx) => {
-                content += `SELECT '{' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
-                content += createAsciiContent(item);
-                content += `SELECT '} ${idx < value.length - 1 ? ',' : ''}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
-            });
-            content += `SELECT '] ${isLast ? '' : ','}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
-        } else if (typeof value === 'object') {
-            content += `SELECT '"${key}": {' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
-            content += createAsciiContent(value);
-            content += `SELECT '} ${isLast ? '' : ','}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
-        } else {
-            content += `SELECT STRCAT('"${key}":"', :${key}, '"${isLast ? '' : ','}') FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
-        }
-    });
+    if (typeof data === 'object' && !Array.isArray(data)) {
+        const keys = Object.keys(data);
+        keys.forEach((key, index) => {
+            const value = data[key];
+            const isLastItem = index === keys.length - 1;
+
+            if (typeof value === 'object' && !Array.isArray(value)) {
+                content += `SELECT '"${key}": {' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
+                content += createAsciiContent(value);
+                content += `SELECT '} ${isLastItem ? '' : ','}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
+            } else if (Array.isArray(value)) {
+                content += `SELECT '"${key}": [' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
+                value.forEach((item, idx) => {
+                    content += `SELECT '{' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
+                    content += createAsciiContent(item);
+                    content += `SELECT '} ${idx < value.length - 1 ? ',' : ''}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
+                });
+                content += `SELECT '] ${isLastItem ? '' : ','}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
+            } else {
+                content += `SELECT STRCAT('"${key}":"', :${key}, '"${isLastItem ? '' : ','}') FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
+            }
+        });
+    }
     return content;
 }
 
 function generateXmlFromJson(data) {
     let xmlContent = '<?xml version="1.0" encoding="UTF-8"?>\n';
-    xmlContent += createXmlContent(data);
+    xmlContent += jsonToXml(data);
     return xmlContent;
 }
 
-function createXmlContent(data) {
-    let content = '';
-    for (const key in data) {
-        const value = data[key];
-        if (Array.isArray(value)) {
-            value.forEach(item => {
-                content += `<${key}>${createXmlContent(item)}</${key}>\n`;
+function jsonToXml(obj) {
+    let xml = '';
+    for (const key in obj) {
+        if (Array.isArray(obj[key])) {
+            xml += `<${key}>\n`;
+            obj[key].forEach(item => {
+                xml += `<item>\n${jsonToXml(item)}</item>\n`;
             });
-        } else if (typeof value === 'object') {
-            content += `<${key}>${createXmlContent(value)}</${key}>\n`;
+            xml += `</${key}>\n`;
+        } else if (typeof obj[key] === 'object') {
+            xml += `<${key}>\n${jsonToXml(obj[key])}</${key}>\n`;
         } else {
-            content += `<${key}>${value}</${key}>\n`;
+            xml += `<${key}>${obj[key]}</${key}>\n`;
         }
     }
-    return content;
+    return xml;
 }
 
 function downloadFile(content, filename) {
