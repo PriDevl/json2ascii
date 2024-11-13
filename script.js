@@ -60,7 +60,7 @@ function createAsciiContent(data) {
             if (typeof value === 'object' && !Array.isArray(value)) {
                 content += `SELECT '"${key}": {' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
                 content += createAsciiContent(value);
-                content += `SELECT '} ${isLastItem ? '' : ','}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
+                content += `SELECT '} ${isLastItem ? '' : ','} ' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
             } else if (Array.isArray(value)) {
                 content += `SELECT '"${key}": [' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
                 value.forEach((item, idx) => {
