@@ -45,7 +45,7 @@ function generateAsciiFromJson(data) {
     let asciiContent = "/* :INFILE = 'C:\\tmp\\infile.txt'; */\n";
     asciiContent += `SELECT '{' FROM DUMMY ASCII UNICODE :infile;\n`;
     asciiContent += createAsciiContent(data);
-    asciiContent += `SELECT '} ${isLastItem() ? '' : ','}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
+    asciiContent += `SELECT '} ${isLastItem ? '' : ','}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
     return asciiContent;
 }
 
@@ -109,5 +109,4 @@ function downloadFile(content, fileName) {
     link.href = URL.createObjectURL(blob);
     link.download = fileName;
     link.click();
-    URL.revokeObjectURL(link.href);
 }
