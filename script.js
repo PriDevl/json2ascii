@@ -97,7 +97,7 @@ function createAsciiContent(data, isLastItem = false) {
 
 function createLine(key, value, isLastItem) {
     if (typeof value === 'number') {
-        return `SELECT STRCAT('"${key}":', ${value}, '${isLastItem ? '' : ','}') FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
+        return `SELECT STRCAT('"${key}":', :${key}, '${isLastItem ? '' : ','}') FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
     } else {
         return `SELECT STRCAT('"${key}":"', :${key}, '"${isLastItem ? '' : ','}') FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
     }
