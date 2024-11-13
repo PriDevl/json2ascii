@@ -45,7 +45,7 @@ function generateAsciiFromJson(data) {
     let content = "/* :INFILE = 'C:\\tmp\\infile.txt'; */\n";
     content += "SELECT '{' FROM DUMMY ASCII UNICODE :infile;\n";
     content += createAsciiContent(data);
-    content += "SELECT '}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n";
+    content += "SELECT '} ${isLastItem ? '' : ','}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n";
     return content;
 }
 
@@ -60,15 +60,15 @@ function createAsciiContent(data) {
             if (typeof value === 'object' && !Array.isArray(value)) {
                 content += `SELECT '"${key}": {' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
                 content += createAsciiContent(value);
-                content += `SELECT '}'${isLastItem ? '' : ','} FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
+                content += `SELECT '} ${isLastItem ? '' : ','}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
             } else if (Array.isArray(value)) {
                 content += `SELECT '"${key}": [' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
                 value.forEach((item, idx) => {
-                    content += "SELECT '{' FROM DUMMY ASCII UNICODE ADDTO :infile;\n";
+                    content += `SELECT '{' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
                     content += createAsciiContent(item);
-                    content += `SELECT '}'${idx < value.length - 1 ? ',' : ''} FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
+                    content += `SELECT '} ${idx < value.length - 1 ? ',' : ''}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
                 });
-                content += `SELECT ']'${isLastItem ? '' : ','} FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
+                content += `SELECT '] ${isLastItem ? '' : ','}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
             } else {
                 content += `SELECT STRCAT('"${key}":"', :${key}, '"${isLastItem ? '' : ','}') FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
             }
