@@ -44,12 +44,12 @@ document.addEventListener('DOMContentLoaded', () => {
 function generateAsciiFromJson(data) {
     let asciiContent = "/* :INFILE = 'C:\\tmp\\infile.txt'; */\n";
     asciiContent += `SELECT '{' FROM DUMMY ASCII UNICODE :infile;\n`;
-    asciiContent += createAsciiContent(data, true);
+    asciiContent += createAsciiContent(data);
     asciiContent += `SELECT '} ${isLastItem() ? '' : ','}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
     return asciiContent;
 }
 
-function createAsciiContent(data, isRoot = false) {
+function createAsciiContent(data) {
     let content = '';
     if (typeof data === 'object' && !Array.isArray(data)) {
         const keys = Object.keys(data);
