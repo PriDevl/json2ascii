@@ -44,33 +44,33 @@ document.addEventListener('DOMContentLoaded', () => {
 function generateAsciiFromJson(data) {
     let asciiContent = "/* :INFILE = 'C:\\tmp\\infile.txt'; */\n";
     asciiContent += `SELECT '{' FROM DUMMY ASCII UNICODE :infile;\n`;
-    asciiContent += createAsciiContent(data);
-    asciiContent += `SELECT '} ${isLastItem ? '' : ','}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
+    asciiContent += createAsciiContent(data, true);
+    asciiContent += `SELECT '} ' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
     return asciiContent;
 }
 
-function createAsciiContent(data) {
+function createAsciiContent(data, isLastItem = true) {
     let content = '';
     if (typeof data === 'object' && !Array.isArray(data)) {
         const keys = Object.keys(data);
         keys.forEach((key, index) => {
             const value = data[key];
-            const isLastItem = index === keys.length - 1;
+            const lastItem = index === keys.length - 1;
 
             if (typeof value === 'object' && !Array.isArray(value)) {
                 content += `SELECT '"${key}": {' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
-                content += createAsciiContent(value);
-                content += `SELECT '} ${isLastItem ? '' : ','}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
+                content += createAsciiContent(value, lastItem);
+                content += `SELECT '} ${lastItem ? '' : ','}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
             } else if (Array.isArray(value)) {
                 content += `SELECT '"${key}": [' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
                 value.forEach((item, idx) => {
                     content += `SELECT '{' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
-                    content += createAsciiContent(item);
+                    content += createAsciiContent(item, idx === value.length - 1);
                     content += `SELECT '} ${idx < value.length - 1 ? ',' : ''}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
                 });
-                content += `SELECT '] ${isLastItem ? '' : ','}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
+                content += `SELECT '] ${lastItem ? '' : ','}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
             } else {
-                content += `SELECT STRCAT('"${key}":"', :${key}, '"${isLastItem ? '' : ','}') FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
+                content += `SELECT STRCAT('"${key}":"', :${key}, '"${lastItem ? '' : ','}') FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
             }
         });
     }
