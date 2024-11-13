@@ -1,8 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     const jsonInput = document.getElementById('jsonInput');
     const clearButton = document.getElementById('clearButton');
-    const downloadAsciiButton = document.getElementById('downloadAscii');
-    const downloadXmlButton = document.getElementById('downloadXml');
+    const downloadAsciiButton = document.getElementById('downloadAsciiButton');
+    const downloadXmlButton = document.getElementById('downloadXmlButton');
 
     clearButton.addEventListener('click', () => {
         jsonInput.value = '';
@@ -11,45 +11,45 @@ document.addEventListener('DOMContentLoaded', () => {
     downloadAsciiButton.addEventListener('click', () => {
         const jsonData = jsonInput.value.trim();
         if (!jsonData) {
-            alert('Please paste your JSON data first.');
+            showAlert('Please paste your JSON data first.');
             return;
         }
 
         try {
             const parsedData = JSON.parse(jsonData);
             const asciiContent = generateAsciiFromJson(parsedData);
-            downloadFile(asciiContent, 'output.ascii');
+            downloadFile(asciiContent, 'asciifile.txt');
         } catch (error) {
-            alert('Invalid JSON format.');
+            showAlert(`Invalid JSON format: ${error.message}`);
         }
     });
 
     downloadXmlButton.addEventListener('click', () => {
         const jsonData = jsonInput.value.trim();
         if (!jsonData) {
-            alert('Please paste your JSON data first.');
+            showAlert('Please paste your JSON data first.');
             return;
         }
 
         try {
             const parsedData = JSON.parse(jsonData);
             const xmlContent = generateXmlFromJson(parsedData);
-            downloadFile(xmlContent, 'output.xml');
+            downloadFile(xmlContent, 'xmlfile.xml');
         } catch (error) {
-            alert('Invalid JSON format.');
+            showAlert(`Invalid JSON format: ${error.message}`);
         }
     });
 });
 
 function generateAsciiFromJson(data) {
-    let content = "/*:infile = 'C:/tmp/infile.txt';*/\n";
-    content += "SELECT '{' FROM DUMMY ASCII UNICODE :infile;\n";
-    content += createAsciiContent(data);
-    content += "SELECT '} ${isLastItem ? '' : ','}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n";
-    return content;
+    let asciiContent = "/* :INFILE = 'C:\\tmp\\infile.txt'; */\n";
+    asciiContent += `SELECT '{' FROM DUMMY ASCII UNICODE :infile;\n`;
+    asciiContent += createAsciiContent(data, true);
+    asciiContent += `SELECT '} ${isLastItem() ? '' : ','}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
+    return asciiContent;
 }
 
-function createAsciiContent(data) {
+function createAsciiContent(data, isRoot = false) {
     let content = '';
     if (typeof data === 'object' && !Array.isArray(data)) {
         const keys = Object.keys(data);
@@ -60,7 +60,7 @@ function createAsciiContent(data) {
             if (typeof value === 'object' && !Array.isArray(value)) {
                 content += `SELECT '"${key}": {' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
                 content += createAsciiContent(value);
-                content += `SELECT '} ${isLastItem ? '' : ','} ' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
+                content += `SELECT '} ${isLastItem ? '' : ','}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
             } else if (Array.isArray(value)) {
                 content += `SELECT '"${key}": [' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
                 value.forEach((item, idx) => {
@@ -79,36 +79,43 @@ function createAsciiContent(data) {
 
 function generateXmlFromJson(data) {
     let xmlContent = '<?xml version="1.0" encoding="UTF-8"?>\n';
-    xmlContent += jsonToXml(data);
+    xmlContent += convertJsonToXml(data);
     return xmlContent;
 }
 
-function jsonToXml(obj) {
+function convertJsonToXml(obj, indent = '') {
     let xml = '';
     for (const key in obj) {
         if (Array.isArray(obj[key])) {
-            xml += `<${key}>\n`;
             obj[key].forEach(item => {
-                xml += `<item>\n${jsonToXml(item)}</item>\n`;
+                xml += `${indent}<${key}>\n`;
+                xml += convertJsonToXml(item, indent + '  ');
+                xml += `${indent}</${key}>\n`;
             });
-            xml += `</${key}>\n`;
         } else if (typeof obj[key] === 'object') {
-            xml += `<${key}>\n${jsonToXml(obj[key])}</${key}>\n`;
+            xml += `${indent}<${key}>\n`;
+            xml += convertJsonToXml(obj[key], indent + '  ');
+            xml += `${indent}</${key}>\n`;
         } else {
-            xml += `<${key}>${obj[key]}</${key}>\n`;
+            xml += `${indent}<${key}>${obj[key]}</${key}>\n`;
         }
     }
     return xml;
 }
 
-function downloadFile(content, filename) {
+function downloadFile(content, fileName) {
     const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = fileName;
+    link.click();
+    URL.revokeObjectURL(link.href);
+}
+
+function showAlert(message) {
+    alert(message);
+}
+
+function isLastItem() {
+    return false;
 }
