@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function generateAsciiFromJson(data) {
     let asciiContent = generateVariableDefinitions(data);
-    asciiContent += "/*:infile = 'C:/tmp/infile.txt';*/\n";
+    asciiContent += "/* infile = 'C:/tmp/infile.txt';*/\n";
     asciiContent += `SELECT '{' FROM DUMMY ASCII UNICODE :infile;\n`;
     asciiContent += createAsciiContent(data, true);
     asciiContent += `SELECT '} ' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
@@ -50,8 +50,7 @@ function generateAsciiFromJson(data) {
 
 function generateVariableDefinitions(data) {
     let variableDefinitions = '';
-    const keys = Object.keys(data);
-    keys.forEach(key => {
+    for (const key in data) {
         const value = data[key];
         if (typeof value === 'string') {
             variableDefinitions += `:${key} = '';\n`;
@@ -61,6 +60,8 @@ function generateVariableDefinitions(data) {
             } else {
                 variableDefinitions += `:${key} = 0.0;\n`;
             }
+        } else if (typeof value === 'boolean') {
+            variableDefinitions += `:${key} = false;\n`;
         } else if (typeof value === 'object' && !Array.isArray(value)) {
             variableDefinitions += generateVariableDefinitions(value);
         } else if (Array.isArray(value)) {
@@ -68,7 +69,7 @@ function generateVariableDefinitions(data) {
                 variableDefinitions += generateVariableDefinitions(item);
             });
         }
-    });
+    }
     return variableDefinitions;
 }
 
@@ -101,7 +102,7 @@ function createAsciiContent(data, isLastItem = false) {
 }
 
 function createLine(key, value, isLastItem) {
-    if (typeof value === 'number') {
+    if (typeof value === 'number' || typeof value === 'boolean') {
         return `SELECT STRCAT('"${key}":', :${key}, '${isLastItem ? '' : ','}') FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
     } else {
         return `SELECT STRCAT('"${key}":"', :${key}, '"${isLastItem ? '' : ','}') FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
