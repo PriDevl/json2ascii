@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function generateAsciiFromJson(data) {
-    let content = "/* :INFILE = 'C:\\tmp\\infile.txt'; */\n";
+    let content = "/*:infile = 'C:/tmp/infile.txt';*/\n";
     content += "SELECT '{' FROM DUMMY ASCII UNICODE :infile;\n";
     content += createAsciiContent(data);
     content += "SELECT '} ${isLastItem ? '' : ','}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n";
