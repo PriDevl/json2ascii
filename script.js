@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     downloadAsciiButton.addEventListener('click', () => {
         const jsonData = jsonInput.value.trim();
         if (!jsonData) {
-            showAlert('Please paste your JSON data first.');
+            alert('Please paste your JSON data first.');
             return;
         }
 
@@ -20,14 +20,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const asciiContent = generateAsciiFromJson(parsedData);
             downloadFile(asciiContent, 'asciifile.txt');
         } catch (error) {
-            showAlert(`Invalid JSON format: ${error.message}`);
+            alert(`Invalid JSON format: ${error.message}`);
         }
     });
 
     downloadXmlButton.addEventListener('click', () => {
         const jsonData = jsonInput.value.trim();
         if (!jsonData) {
-            showAlert('Please paste your JSON data first.');
+            alert('Please paste your JSON data first.');
             return;
         }
 
@@ -36,13 +36,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const xmlContent = generateXmlFromJson(parsedData);
             downloadFile(xmlContent, 'xmlfile.xml');
         } catch (error) {
-            showAlert(`Invalid JSON format: ${error.message}`);
+            alert(`Invalid JSON format: ${error.message}`);
         }
     });
 });
 
 function generateAsciiFromJson(data) {
-    let asciiContent = "/*:infile = 'C:/tmp/infile.txt';*/\n";
+    let asciiContent = "/* :INFILE = 'C:\\tmp\\infile.txt'; */\n";
     asciiContent += `SELECT '{' FROM DUMMY ASCII UNICODE :infile;\n`;
     asciiContent += createAsciiContent(data);
     asciiContent += `SELECT '} ${isLastItem() ? '' : ','}' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
@@ -110,12 +110,4 @@ function downloadFile(content, fileName) {
     link.download = fileName;
     link.click();
     URL.revokeObjectURL(link.href);
-}
-
-function showAlert(message) {
-    alert(message);
-}
-
-function isLastItem() {
-    return false;
 }
