@@ -40,31 +40,36 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function generateAsciiFromJson(data) {
-    let asciiContent = "/*:infile = 'C:/tmp/infile.txt';*/\n";
+    let asciiContent = generateVariableDefinitions(data);
+    asciiContent += "/*:infile = 'C:/tmp/infile.txt';*/\n";
     asciiContent += `SELECT '{' FROM DUMMY ASCII UNICODE :infile;\n`;
     asciiContent += createAsciiContent(data, true);
     asciiContent += `SELECT '} ' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
     return asciiContent;
 }
 
-function generateXmlFromJson(data, indent = '') {
-    let xmlContent = '';
-    for (const key in data) {
-        if (Array.isArray(data[key])) {
-            data[key].forEach(item => {
-                xmlContent += `${indent}<${key}>\n`;
-                xmlContent += generateXmlFromJson(item, indent + '  ');
-                xmlContent += `${indent}</${key}>\n`;
+function generateVariableDefinitions(data) {
+    let variableDefinitions = '';
+    const keys = Object.keys(data);
+    keys.forEach(key => {
+        const value = data[key];
+        if (typeof value === 'string') {
+            variableDefinitions += `:${key} = '';\n`;
+        } else if (typeof value === 'number') {
+            if (Number.isInteger(value)) {
+                variableDefinitions += `:${key} = 0;\n`;
+            } else {
+                variableDefinitions += `:${key} = 0.0;\n`;
+            }
+        } else if (typeof value === 'object' && !Array.isArray(value)) {
+            variableDefinitions += generateVariableDefinitions(value);
+        } else if (Array.isArray(value)) {
+            value.forEach(item => {
+                variableDefinitions += generateVariableDefinitions(item);
             });
-        } else if (typeof data[key] === 'object') {
-            xmlContent += `${indent}<${key}>\n`;
-            xmlContent += generateXmlFromJson(data[key], indent + '  ');
-            xmlContent += `${indent}</${key}>\n`;
-        } else {
-            xmlContent += `${indent}<${key}>${data[key]}</${key}>\n`;
         }
-    }
-    return xmlContent;
+    });
+    return variableDefinitions;
 }
 
 function createAsciiContent(data, isLastItem = false) {
@@ -74,7 +79,7 @@ function createAsciiContent(data, isLastItem = false) {
         keys.forEach((key, index) => {
             const value = data[key];
             const isLast = index === keys.length - 1;
-            
+
             if (typeof value === 'object' && !Array.isArray(value)) {
                 content += `SELECT '"${key}": {' FROM DUMMY ASCII UNICODE ADDTO :infile;\n`;
                 content += createAsciiContent(value);
@@ -111,4 +116,24 @@ function downloadFile(content, fileName) {
     a.download = fileName;
     a.click();
     URL.revokeObjectURL(url);
+}
+
+function generateXmlFromJson(data, indent = '') {
+    let xmlContent = '';
+    for (const key in data) {
+        if (Array.isArray(data[key])) {
+            data[key].forEach(item => {
+                xmlContent += `${indent}<${key}>\n`;
+                xmlContent += generateXmlFromJson(item, indent + '  ');
+                xmlContent += `${indent}</${key}>\n`;
+            });
+        } else if (typeof data[key] === 'object') {
+            xmlContent += `${indent}<${key}>\n`;
+            xmlContent += generateXmlFromJson(data[key], indent + '  ');
+            xmlContent += `${indent}</${key}>\n`;
+        } else {
+            xmlContent += `${indent}<${key}>${data[key]}</${key}>\n`;
+        }
+    }
+    return xmlContent;
 }
